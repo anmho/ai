@@ -1,0 +1,32 @@
+{
+  "name": "ai-cli",
+  "version": "1.0.0",
+  "description": "Fast AI assistant powered by Gemini Flash",
+  "main": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "ai": "./dist/ai"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build --compile --minify --sourcemap ./src/index.ts --outfile dist/ai",
+    "link": "bun run build && bun link",
+    "unlink": "bun unlink",
+    "clean": "rm -rf dist",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^24.10.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.44",
+    "@inquirer/prompts": "^8.0.1",
+    "ai": "^5.0.104",
+    "commander": "^14.0.2",
+    "ora": "^9.0.0"
+  }
+}
