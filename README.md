@@ -108,9 +108,6 @@ cat code.js | ai "add comments" > code-commented.js
 # Use a different model
 ai --model gemini-1.5-pro "complex analysis task"
 
-# Verbose output (shows token usage)
-ai --verbose "explain something"
-
 # Debug mode (shows full error details and configuration)
 ai --debug "test prompt"
 
@@ -192,9 +189,24 @@ bun test
 
 ## Performance
 
-- **Cold start**: < 50ms (optimized binary)
+The CLI automatically displays performance metrics after each request:
+
+```
+─────────────────────────────────────────────────────────
+Cold start:  0.61s     Input:  50 tokens
+Stream time: 0.59s     Output: 2 tokens
+Total time:  0.61s     Total:  52 tokens
+─────────────────────────────────────────────────────────
+```
+
+- **Cold start**: Time from program start to first token received
+- **Stream time**: Total time for streaming the complete response
+- **Total time**: Overall execution time including program initialization
+- **Token usage**: Input, output, and total tokens used for the request
+
+Typical metrics:
 - **Binary size**: ~59MB (includes Bun runtime)
-- **Time to first token**: Depends on Gemini API response
+- **Time to first token**: 0.5-1.5s (depends on Gemini API response)
 - **Memory usage**: < 50MB during operation
 
 ## Examples
@@ -205,10 +217,36 @@ bun test
 echo "create a fibonacci function in Python" | ai
 ```
 
+**Response:**
+```python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+```
+─────────────────────────────────────────────────────────
+Cold start:  0.54s     Input:  58 tokens
+Stream time: 0.61s     Output: 45 tokens
+Total time:  0.55s     Total:  103 tokens
+─────────────────────────────────────────────────────────
+```
+
 ### Debugging
 
 ```bash
 bun run src/broken-app.ts 2>&1 | ai "fix this error"
+```
+
+**Response:**
+```
+The error shows you're trying to access a property on undefined. Add a null
+check before accessing the property:
+
+if (user && user.name) {
+  console.log(user.name);
+}
 ```
 
 ### DevOps
@@ -217,10 +255,40 @@ bun run src/broken-app.ts 2>&1 | ai "fix this error"
 kubectl get pods | ai "which pods are failing?"
 ```
 
+**Response:**
+```
+Based on the output, these pods are failing:
+
+• backend-api-7d9f8b6c4-x8k2p - CrashLoopBackOff
+• worker-queue-5c8d9f7b2-m4n1k - Error
+
+The backend API is repeatedly crashing and the worker queue has encountered
+an error. Check the logs with:
+
+kubectl logs backend-api-7d9f8b6c4-x8k2p
+kubectl logs worker-queue-5c8d9f7b2-m4n1k
+```
+
 ### Data Processing
 
 ```bash
 cat data.csv | ai "convert this to JSON"
+```
+
+**Response:**
+```json
+[
+  {
+    "name": "Alice",
+    "age": 30,
+    "city": "New York"
+  },
+  {
+    "name": "Bob",
+    "age": 25,
+    "city": "San Francisco"
+  }
+]
 ```
 
 ## Troubleshooting
