@@ -14,6 +14,7 @@ export interface Config {
   model: SupportedModel;
   maxTokens: number;
   temperature: number;
+  systemPrompt?: string;
   ui: { colors: boolean; spinner: boolean; markdown: boolean };
 }
 
@@ -21,6 +22,8 @@ const DEFAULT_CONFIG: Config = {
   model: DEFAULT_MODEL,
   maxTokens: 8192,
   temperature: 0.7,
+  systemPrompt:
+    'You are a helpful AI assistant. Provide concise, accurate answers formatted for terminal viewing. For factual queries, give direct answers with key facts. Use simple formatting: bullets for lists, minimal markdown. Avoid unnecessary elaboration.',
   ui: { colors: true, spinner: true, markdown: true },
 };
 
@@ -58,6 +61,10 @@ function parseConfig(raw: unknown, validateValues = true): Config {
     throw new Error(`Invalid apiKey type: expected string`);
   }
 
+  if (obj.systemPrompt !== undefined && typeof obj.systemPrompt !== 'string') {
+    throw new Error(`Invalid systemPrompt type: expected string`);
+  }
+
   // Check values (optional)
   if (validateValues) {
     if (!isSupportedModel(obj.model)) {
@@ -81,6 +88,7 @@ function parseConfig(raw: unknown, validateValues = true): Config {
     model: obj.model as SupportedModel,
     maxTokens: obj.maxTokens,
     temperature: obj.temperature,
+    systemPrompt: obj.systemPrompt as string | undefined,
     ui: {
       colors: ui.colors as boolean,
       spinner: ui.spinner as boolean,

@@ -132,54 +132,91 @@ export class MarkdownFormatter {
       return '';
     }
 
-    // Headers
-    if (line.startsWith('### ')) {
-      return this.colorize(line.slice(4), colors.bold + colors.cyan);
-    }
-    if (line.startsWith('## ')) {
-      return this.colorize(line.slice(3), colors.bold + colors.brightCyan);
-    }
-    if (line.startsWith('# ')) {
-      return this.colorize(line.slice(2), colors.bold + colors.brightCyan);
-    }
+    // Store original line for structure checks
+    const originalLine = line;
 
-    // Bold (**text**)
+    // Process inline formatting first (applies to all line types)
+    // Bold (**text**) - remove asterisks, make bold
     line = line.replace(/\*\*(.+?)\*\*/g, (_, text) =>
       this.colorize(text, colors.bold)
     );
 
-    // Italic (*text*)
-    line = line.replace(/\*(.+?)\*/g, (_, text) =>
-      this.colorize(text, colors.italic)
-    );
+    // Italic (*text*) - remove asterisks for cleaner look
+    // Use a more careful regex to avoid matching list markers
+    line = line.replace(/(?<!\*)\*([^*\s]+[^*]*?[^*\s])\*(?!\*)/g, '$1');
 
-    // Inline code (`code`)
+    // Inline code (`code`) - subtle yellow
     line = line.replace(/`([^`]+)`/g, (_, code) =>
-      this.colorize(code, colors.brightYellow)
+      this.colorize(code, colors.yellow)
     );
 
-    // Links [text](url)
+    // Links [text](url) - show text in blue, hide URL
     line = line.replace(/\[([^\]]+)\]\([^)]+\)/g, (_, text) =>
-      this.colorize(text, colors.blue)
+      this.colorize(text, colors.brightBlue)
     );
+
+    // Strikethrough (~~text~~) - dim text
+    line = line.replace(/~~(.+?)~~/g, (_, text) =>
+      this.colorize(text, colors.dim)
+    );
+
+    // Headers - use simple formatting (check original line for structure)
+    if (originalLine.startsWith('### ')) {
+      return this.colorize('  ' + line.slice(4), colors.cyan);
+    }
+    if (originalLine.startsWith('## ')) {
+      return '\n' + this.colorize(line.slice(3), colors.bold + colors.cyan);
+    }
+    if (originalLine.startsWith('# ')) {
+      return '\n' + this.colorize(line.slice(2), colors.bold + colors.brightCyan);
+    }
+
+    // Horizontal rule
+    if (originalLine.match(/^[-*_]{3,}\s*$/)) {
+      return this.colorize('\n  ───────────────────────────────\n', colors.brightBlack);
+    }
+
+    // List items - simple bullet or number (now with inline formatting already applied)
+    // Handle nested bullets (with leading spaces) - check original line
+    const nestedBulletMatch = originalLine.match(/^(\s*)\*\s+/);
+    if (nestedBulletMatch) {
+      const indent = nestedBulletMatch[1];
+      return indent + this.colorize('• ', colors.brightBlack) + line.slice(nestedBulletMatch[0].length);
+    }
+
+    // Handle nested numbered lists - check original line
+    const nestedNumberMatch = originalLine.match(/^(\s*)(\d+\.)\s+/);
+    if (nestedNumberMatch) {
+      const indent = nestedNumberMatch[1];
+      const number = nestedNumberMatch[2];
+      return indent + this.colorize(number + ' ', colors.brightBlack) + line.slice(nestedNumberMatch[0].length);
+    }
+
+    // Blockquotes
+    if (originalLine.startsWith('> ')) {
+      return this.colorize('  │ ', colors.brightBlack) + line.slice(2);
+    }
 
     return line;
   }
 
   private formatCodeBlock(content: string, lang: string): string {
+    const trimmed = content.trim();
+
     if (!this.shouldColorize()) {
-      return `\n${content}\n`;
+      return `\n${trimmed}\n`;
     }
 
-    const border = this.colorize('─'.repeat(60), colors.brightBlack);
-    const langLabel = lang
-      ? this.colorize(` ${lang} `, colors.brightBlack)
-      : '';
+    // Simple indented code block with subtle border
+    const lines = trimmed.split('\n');
+    const formatted = lines.map(line =>
+      this.colorize('  │ ', colors.brightBlack) + this.colorize(line, colors.brightWhite)
+    ).join('\n');
 
-    return `\n${border}\n${langLabel}\n${this.colorize(
-      content.trim(),
-      colors.brightWhite
-    )}\n${border}\n`;
+    const topBorder = this.colorize('  ┌' + (lang ? '─ ' + lang + ' ' : ''), colors.brightBlack);
+    const bottomBorder = this.colorize('  └', colors.brightBlack);
+
+    return `\n${topBorder}\n${formatted}\n${bottomBorder}\n`;
   }
 }
 
@@ -195,4 +232,29 @@ export function formatSuccess(message: string): string {
     return `\x1b[32m✓ ${message}\x1b[0m`;
   }
   return `✓ ${message}`;
+}
+
+export function formatTimingStats(coldStart: number, streamTime: number, totalTime: number): string {
+  if (isTTY()) {
+    const dim = colors.dim;
+    const brightBlack = colors.brightBlack;
+    const cyan = colors.cyan;
+    const reset = colors.reset;
+
+    return (
+      `\n${dim}${brightBlack}───────────────────────────────${reset}\n` +
+      `${dim}Cold start:${reset}  ${cyan}${coldStart.toFixed(2)}s${reset}\n` +
+      `${dim}Stream time:${reset} ${cyan}${streamTime.toFixed(2)}s${reset}\n` +
+      `${dim}Total time:${reset}  ${cyan}${totalTime.toFixed(2)}s${reset}\n` +
+      `${dim}${brightBlack}───────────────────────────────${reset}`
+    );
+  }
+
+  return (
+    `\n───────────────────────────────\n` +
+    `Cold start:  ${coldStart.toFixed(2)}s\n` +
+    `Stream time: ${streamTime.toFixed(2)}s\n` +
+    `Total time:  ${totalTime.toFixed(2)}s\n` +
+    `───────────────────────────────`
+  );
 }

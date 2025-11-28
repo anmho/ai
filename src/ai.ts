@@ -62,6 +62,7 @@ export async function sendPrompt(
 
   const result = await streamText({
     model: googleProvider(model),
+    system: config.systemPrompt,
     prompt,
     maxOutputTokens: config.maxTokens,
     temperature: config.temperature,
