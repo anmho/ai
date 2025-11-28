@@ -33,6 +33,7 @@ export class MarkdownFormatter {
   private inCodeBlock = false;
   private codeBlockLang = '';
   private codeBlockContent = '';
+  private inCustomBlock = false; // Track custom blocks like ┌─ ... └
 
   constructor(config: Config) {
     this.config = config;
@@ -106,6 +107,23 @@ export class MarkdownFormatter {
   }
 
   private formatLine(line: string): string {
+    // Detect custom block start (like ┌─ diff)
+    if (line.match(/^[┌├]\s*─/)) {
+      this.inCustomBlock = true;
+      return this.colorize(line, colors.brightBlack);
+    }
+
+    // Detect custom block end (like └)
+    if (line.match(/^└/) && this.inCustomBlock) {
+      this.inCustomBlock = false;
+      return this.colorize(line, colors.brightBlack);
+    }
+
+    // If in custom block, pass through with minimal formatting
+    if (this.inCustomBlock) {
+      return line;
+    }
+
     // Code block start
     if (line.startsWith('```')) {
       if (this.inCodeBlock) {
