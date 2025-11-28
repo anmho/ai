@@ -165,15 +165,15 @@ export class MarkdownFormatter {
       return this.colorize('  ' + line.slice(4), colors.cyan);
     }
     if (originalLine.startsWith('## ')) {
-      return '\n' + this.colorize(line.slice(3), colors.bold + colors.cyan);
+      return this.colorize(line.slice(3), colors.bold + colors.cyan);
     }
     if (originalLine.startsWith('# ')) {
-      return '\n' + this.colorize(line.slice(2), colors.bold + colors.brightCyan);
+      return this.colorize(line.slice(2), colors.bold + colors.brightCyan);
     }
 
     // Horizontal rule
     if (originalLine.match(/^[-*_]{3,}\s*$/)) {
-      return this.colorize('\n  ───────────────────────────────\n', colors.brightBlack);
+      return this.colorize('  ───────────────────────────────', colors.brightBlack);
     }
 
     // List items - simple bullet or number (now with inline formatting already applied)
@@ -204,7 +204,7 @@ export class MarkdownFormatter {
     const trimmed = content.trim();
 
     if (!this.shouldColorize()) {
-      return `\n${trimmed}\n`;
+      return `${trimmed}`;
     }
 
     // Simple indented code block with subtle border
@@ -216,7 +216,7 @@ export class MarkdownFormatter {
     const topBorder = this.colorize('  ┌' + (lang ? '─ ' + lang + ' ' : ''), colors.brightBlack);
     const bottomBorder = this.colorize('  └', colors.brightBlack);
 
-    return `\n${topBorder}\n${formatted}\n${bottomBorder}\n`;
+    return `${topBorder}\n${formatted}\n${bottomBorder}`;
   }
 }
 
