@@ -77,16 +77,21 @@ async function main() {
         let firstChunk = true;
         let firstTokenTime = 0;
         const responseStartTime = performance.now();
+        let hasChunks = false;
 
         for await (const chunk of result.textStream) {
+          hasChunks = true;
+
           if (firstChunk) {
             // Record time to first token (cold start)
             firstTokenTime = performance.now();
             const coldStart = (firstTokenTime - programStartTime) / 1000;
-            console.error(`Cold start: ${coldStart.toFixed(2)}s`);
 
             // Stop spinner when we get the first chunk
             spinner?.stop();
+
+            // Write timing metrics to stderr
+            process.stderr.write(`Cold start: ${coldStart.toFixed(2)}s\n`);
             firstChunk = false;
           }
 
@@ -95,6 +100,14 @@ async function main() {
           if (formatted) {
             process.stdout.write(formatted);
           }
+        }
+
+        // If no chunks were received, still record timing
+        if (!hasChunks && firstChunk) {
+          firstTokenTime = performance.now();
+          const coldStart = (firstTokenTime - programStartTime) / 1000;
+          spinner?.stop();
+          process.stderr.write(`Cold start: ${coldStart.toFixed(2)}s\n`);
         }
 
         // Flush any remaining formatted content
@@ -109,11 +122,11 @@ async function main() {
         // Add newline at the end
         process.stdout.write('\n');
 
-        // Calculate and display timing metrics
+        // Calculate and display timing metrics to stderr - always show these
         const streamTime = (performance.now() - responseStartTime) / 1000;
         const totalTime = (performance.now() - programStartTime) / 1000;
-        console.error(`Stream time: ${streamTime.toFixed(2)}s`);
-        console.error(`Total time: ${totalTime.toFixed(2)}s`);
+        process.stderr.write(`Stream time: ${streamTime.toFixed(2)}s\n`);
+        process.stderr.write(`Total time: ${totalTime.toFixed(2)}s\n`);
 
         // Show usage stats in verbose mode
         if (opts.verbose) {

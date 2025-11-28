@@ -167,11 +167,21 @@ Configuration is stored at `~/.config/ai/config.json`:
 ## Development
 
 ```bash
-# Run in development mode
+# Run in development mode (without compiling)
 bun run dev
 
-# Build binary
+# Or run directly
+bun src/index.ts "your prompt"
+
+# Build binary (required after code changes)
 bun run build
+
+# Build and link (compile + make available globally)
+bun run link
+
+# Note: After making code changes, you MUST rebuild
+# Running 'bun link' alone will NOT recompile the binary
+# Use 'bun run build' or 'bun run link' instead
 
 # Clean build artifacts
 bun run clean
