@@ -234,12 +234,30 @@ export function formatSuccess(message: string): string {
   return `✓ ${message}`;
 }
 
-export function formatTimingStats(coldStart: number, streamTime: number, totalTime: number): string {
+export function formatTimingStats(
+  coldStart: number,
+  streamTime: number,
+  totalTime: number,
+  inputTokens?: number,
+  outputTokens?: number,
+  totalTokens?: number
+): string {
   if (isTTY()) {
     const dim = colors.dim;
     const brightBlack = colors.brightBlack;
     const cyan = colors.cyan;
+    const magenta = colors.magenta;
     const reset = colors.reset;
+
+    if (inputTokens !== undefined && outputTokens !== undefined && totalTokens !== undefined) {
+      return (
+        `\n${dim}${brightBlack}─────────────────────────────────────────────────────────${reset}\n` +
+        `${dim}Cold start:${reset}  ${cyan}${coldStart.toFixed(2)}s${reset}     ${dim}Input:${reset}  ${magenta}${inputTokens.toLocaleString()}${reset} ${dim}tokens${reset}\n` +
+        `${dim}Stream time:${reset} ${cyan}${streamTime.toFixed(2)}s${reset}     ${dim}Output:${reset} ${magenta}${outputTokens.toLocaleString()}${reset} ${dim}tokens${reset}\n` +
+        `${dim}Total time:${reset}  ${cyan}${totalTime.toFixed(2)}s${reset}     ${dim}Total:${reset}  ${magenta}${totalTokens.toLocaleString()}${reset} ${dim}tokens${reset}\n` +
+        `${dim}${brightBlack}─────────────────────────────────────────────────────────${reset}`
+      );
+    }
 
     return (
       `\n${dim}${brightBlack}───────────────────────────────${reset}\n` +
@@ -247,6 +265,16 @@ export function formatTimingStats(coldStart: number, streamTime: number, totalTi
       `${dim}Stream time:${reset} ${cyan}${streamTime.toFixed(2)}s${reset}\n` +
       `${dim}Total time:${reset}  ${cyan}${totalTime.toFixed(2)}s${reset}\n` +
       `${dim}${brightBlack}───────────────────────────────${reset}`
+    );
+  }
+
+  if (inputTokens !== undefined && outputTokens !== undefined && totalTokens !== undefined) {
+    return (
+      `\n─────────────────────────────────────────────────────────\n` +
+      `Cold start:  ${coldStart.toFixed(2)}s     Input:  ${inputTokens.toLocaleString()} tokens\n` +
+      `Stream time: ${streamTime.toFixed(2)}s     Output: ${outputTokens.toLocaleString()} tokens\n` +
+      `Total time:  ${totalTime.toFixed(2)}s     Total:  ${totalTokens.toLocaleString()} tokens\n` +
+      `─────────────────────────────────────────────────────────`
     );
   }
 

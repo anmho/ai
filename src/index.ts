@@ -116,20 +116,23 @@ async function main() {
         // Add newline at the end
         process.stdout.write('\n');
 
-        // Calculate and display timing metrics to stderr - always show these
+        // Calculate timing metrics and get token usage
         const coldStart = (firstTokenTime - programStartTime) / 1000;
         const streamTime = (performance.now() - responseStartTime) / 1000;
         const totalTime = (performance.now() - programStartTime) / 1000;
-        process.stderr.write(formatTimingStats(coldStart, streamTime, totalTime) + '\n');
+        const usage = await result.usage;
 
-        // Show usage stats in verbose mode
-        if (opts.verbose) {
-          const usage = await result.usage;
-          console.error(`\n--- Usage ---`);
-          console.error(`Prompt tokens: ${usage.inputTokens}`);
-          console.error(`Completion tokens: ${usage.outputTokens}`);
-          console.error(`Total tokens: ${usage.totalTokens}`);
-        }
+        // Display timing and token metrics to stderr - always show these
+        process.stderr.write(
+          formatTimingStats(
+            coldStart,
+            streamTime,
+            totalTime,
+            usage.inputTokens,
+            usage.outputTokens,
+            usage.totalTokens
+          ) + '\n'
+        );
       } catch (error: unknown) {
         handleError(error, opts.debug);
       }
