@@ -6,6 +6,8 @@ import { sendPrompt } from './ai';
 import { createSpinner } from './ui/spinner';
 import { handleError } from './errors';
 import { formatError } from './ui/formatter';
+import { MarkdownFormatter } from './ui/formatter';
+import { loadConfig } from './config';
 
 // Track program start time
 const programStartTime = performance.now();
@@ -59,6 +61,10 @@ async function main() {
         const spinner = createSpinner('Thinking...');
         spinner?.start();
 
+        // Load config for formatter
+        const config = await loadConfig();
+        const formatter = new MarkdownFormatter(config);
+
         // Send prompt to Gemini
         const result = await sendPrompt(
           fullPrompt,
@@ -83,7 +89,18 @@ async function main() {
             spinner?.stop();
             firstChunk = false;
           }
-          process.stdout.write(chunk);
+
+          // Format and write chunk
+          const formatted = formatter.formatChunk(chunk);
+          if (formatted) {
+            process.stdout.write(formatted);
+          }
+        }
+
+        // Flush any remaining formatted content
+        const remaining = formatter.flush();
+        if (remaining) {
+          process.stdout.write(remaining);
         }
 
         // Ensure spinner is stopped
@@ -92,9 +109,11 @@ async function main() {
         // Add newline at the end
         process.stdout.write('\n');
 
-        // Calculate and display total response time
-        const totalTime = (performance.now() - responseStartTime) / 1000;
-        console.error(`Completed in ${totalTime.toFixed(2)}s`);
+        // Calculate and display timing metrics
+        const streamTime = (performance.now() - responseStartTime) / 1000;
+        const totalTime = (performance.now() - programStartTime) / 1000;
+        console.error(`Stream time: ${streamTime.toFixed(2)}s`);
+        console.error(`Total time: ${totalTime.toFixed(2)}s`);
 
         // Show usage stats in verbose mode
         if (opts.verbose) {
